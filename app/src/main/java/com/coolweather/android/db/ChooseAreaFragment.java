@@ -6,10 +6,13 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import org.litepal.crud.DataSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,5 +67,74 @@ public class ChooseAreaFragment extends Fragment {
         listView.setAdapter(adapter);
         return view;
     }
-    
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(Bundle savedInstanceState);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+            @Override
+            public void onItemClick(AdapterView<> parent,View view,int position,long id){
+                if(currentLevel==LEVEL_PROVINCE){
+                    selectedProvince = provinceList.get(position);
+                    queryCities();
+                }else if(currentLevel == LEVEL_CITY){
+                    selectedCity = cityList.get(position);
+                    queryCounties();
+                }
+            }
+        });
+        backButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                if(currentLevel==LEVEL_COUNTY){
+                    queryCities();
+                }else if(currentLevel == LEVEL_CITY){
+                    queryProvinces();
+                }
+
+            }
+        });
+        queryProvinces();
+    }
+    /**
+     * 查询全国所有的省，优先从数据库查询，如果没有查询到再从服务器查询
+     */
+    private void queryProvinces(){
+        titleText.setText("中国");
+        backButton.setVisibility(View.GONE);
+        provinceList = DataSupport.findAll(Province.class);
+        if(provinceList.size()>0){
+            datalist.clear();
+            for(Province province:provinceList){
+                datalist.add(province.getProvinceName());
+            }
+            adapter.notifyDataSetChanged();
+            listView.setSelection(0);
+            currentLevel = LEVEL_PROVINCE;
+        }else {
+            String address = "http://guolin.tech/api/china";
+            queryFromServer(address,"province");
+        }
+    }
+    /**
+     * 查询全国所有的市，优先从数据库查询，如果没有查询到再去服务器查询
+     */
+    private void queryCities(){
+        titleText.setText(selectedProvince.getProvinceName());
+        backButton.setVisibility(View.VISIBLE);
+        cityList = DataSupport.where("provinceid = ?", String.valueOf(selectedProvince.getId())).find(City.class);
+        if(cityList.size()>0){
+            datalist.clear();
+            for (City city :cityList){
+                datalist.add(city.getCityName());
+            }
+            adapter.notifyDataSetChanged();
+            listView.setSelection(0);
+            currentLevel == LEVEL_CITY;
+        }else {
+            int provinceCode = selectedProvince.getProvinceCode();
+            String address = "http://guolin.tech/api/china"+provinceCode;
+            queryFromServer(address,"city");
+        }
+    }
+
 }
