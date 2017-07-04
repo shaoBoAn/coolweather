@@ -1,4 +1,4 @@
-package com.coolweather.android.db;
+package com.coolweather.android;
 
 import android.app.ProgressDialog;
 import android.os.Bundle;
@@ -13,9 +13,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.coolweather.android.R;
 import com.coolweather.android.util.HttpUtil;
 import com.coolweather.android.util.Utility;
-
+import com.coolweather.android.db.*;
 import org.litepal.crud.DataSupport;
 
 import java.io.IOException;
@@ -78,10 +79,10 @@ public class ChooseAreaFragment extends Fragment {
     }
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(Bundle savedInstanceState);
+        super.onActivityCreated(savedInstanceState);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
             @Override
-            public void onItemClick(AdapterView<> parent,View view,int position,long id){
+            public void onItemClick(AdapterView<?> parent,View view,int position,long id){
                 if(currentLevel==LEVEL_PROVINCE){
                     selectedProvince = provinceList.get(position);
                     queryCities();
@@ -138,7 +139,7 @@ public class ChooseAreaFragment extends Fragment {
             }
             adapter.notifyDataSetChanged();
             listView.setSelection(0);
-            currentLevel == LEVEL_CITY;
+            currentLevel = LEVEL_CITY;
         }else {
             int provinceCode = selectedProvince.getProvinceCode();
             String address = "http://guolin.tech/api/china/"+provinceCode;
@@ -152,9 +153,9 @@ public class ChooseAreaFragment extends Fragment {
         titleText.setText(selectedCity.getCityName());
         backButton.setVisibility(View.VISIBLE);
         countyList = DataSupport.where("cityid = ?", String.valueOf(selectedCity.getId())).find(County.class);
-        if(cityList.size()>0){
+        if(countyList.size()>0){
             datalist.clear();
-            for (County county:cityList){
+            for (County county:countyList){
                 datalist.add(county.getCountyName());
             }
             adapter.notifyDataSetChanged();
@@ -179,7 +180,7 @@ public class ChooseAreaFragment extends Fragment {
                     @Override
                     public void run() {
                         closeProgressDialog();
-                        Toast.makeText(getContext(),"加载失败"，Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(),"加载失败",Toast.LENGTH_SHORT).show();
                     }
                 });
             }
